@@ -23,7 +23,7 @@ class GridData(object):
         
         #call in the x and y data to determine rotation
         m_rot, c_rot = self.fitData(d[2],d[3])
-        self.rotAng(m_rot, c_rot)
+        self.rotAng(m_rot)
 
         #call in the x telescope and x ccd data to determine plate scale
         m_scale, c_scale = self.fitData(d[1],d[3])
@@ -46,9 +46,9 @@ class GridData(object):
         print 'scale: ' +str(1/(scale/3600.)) + ' arcsec/pix (unbinned)'
         return scale
 
-    def rotAng(self, m = None, c = None):
-        x = 10
-        y = (m*x) + c
+    def rotAng(self, m = None):
+        x = 100
+        y = (m*x)
         print x, y, np.pi
         phi = self.convert(y,x)
         print phi
@@ -61,7 +61,7 @@ class GridData(object):
         use numpy lsq fit on the grid of data and return fit equation
         @param grid - A Numpy array of ...
         """
-        print x_arr, y_arr
+        #print x_arr, y_arr
         A = np.vstack([x_arr, np.ones(len(x_arr))]).T
         #print A
         m,c = np.linalg.lstsq(A,y_arr)[0]

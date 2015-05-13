@@ -16,6 +16,13 @@ class TestGridData(unittest.TestCase):
 		self.boreSimple = instcalc.BoresightData(self.arrBoreSimple)
 		self.boreComplex = instcalc.BoresightData(self.arrBoreComplex)
 
+	def readFile(self):
+		tmp=[]
+		f_in = open('data/20120604_spicam_grid.txt')
+		for line in file
+
+		f_in.close()
+
 	"""def test_rotationAngleSimple(self):
 		self.assertEqual(self.instSimple.rotationAngle(),0)"""
 
