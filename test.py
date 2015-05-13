@@ -5,8 +5,8 @@ import instcalc
 
 class TestGridData(unittest.TestCase):
 	def setUp(self):
-		self.arrGridSimple = [[0,.5,0,1],[.5,0,1,0]]
-		self.arrGridComplex = [[0.0,0.004,936,547],[0.0,0.0,520,556],[0.0,-0.004,110,536]]
+		self.arrGridSimple = [[0,0,0,0],[1.,1.,1.,1.], [2,2,2,2]]
+		self.arrGridComplex = [[0.000 ,0.000,523.48,520.71],[0.000,0.015,535.17,716.88],[0.000,0.030,525.07,906.22]]
 		self.arrBoreSimple = [[0,1,0],[90,0,1],[180,-1,0],[270,0,-1]]
 		self.arrBoreComplex = [[0.0,70.41,699.34],[30.0,226.18,897.68],[60.0,459.81,992.51], \
 							[90.0,707.15,958.16],[-30.0,42.58,448.13],[-60.0,138.37,216.91],[-90.0,337.23,65.37]]
@@ -17,12 +17,12 @@ class TestGridData(unittest.TestCase):
 		self.boreComplex = instcalc.BoresightData(self.arrBoreComplex)
 
 	"""def test_rotationAngleSimple(self):
-		self.assertEqual(self.instSimple.rotationAngle(),0)
+		self.assertEqual(self.instSimple.rotationAngle(),0)"""
 
 	def test_rotationAngleComplex(self):
-		self.assertEqual(self.instComplex.rotationAngle(),0)"""
+		self.assertEqual(self.instComplex.rotationAngle(),0)
 
-	def test_plateScaleSimple(self):
+	"""def test_plateScaleSimple(self):
 		starPos = [self.arrGridSimple[0][3],self.arrGridSimple[1][3]]
 		telPos = [self.arrGridSimple[0][1],self.arrGridSimple[1][1]]
 		self.assertEqual(self.instSimple.plateScale(telPos, starPos),.5)
@@ -37,7 +37,7 @@ class TestGridData(unittest.TestCase):
 
 	def test_boresightPosComplex(self):
 		x,y = self.boreComplex.findCenter()
-		self.assertEqual((int(x), int(y)),(518,513))
+		self.assertEqual((int(x), int(y)),(518,513))"""
 
 
 if __name__ == '__main__':

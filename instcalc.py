@@ -19,9 +19,18 @@ class GridData(object):
         The original Igor program has two functions XFit and YFit.  I believe these are fitting N lsq fits 
         to linear components.  This is how there is a differing X and Y platescale.
         """
+        d = np.transpose(self.data)
+        
+        #call in the x and y data to determine rotation
+        m_rot, c_rot = self.fitData(d[2],d[3])
+        self.rotAng(m_rot, c_rot)
+
+        #call in the x telescope and x ccd data to determine plate scale
+        m_scale, c_scale = self.fitData(d[1],d[3])
+        self.plateScale(m_scale, 2)
         return 
 
-    def plateScale(self, telPos = None, starPos = None):
+    def plateScale(self, m = None, bin = None):
         """
         calculate the plate scale based on two input observations.
         Change this so that it is not taking x and y data, but generalize
@@ -30,21 +39,38 @@ class GridData(object):
 
         Use the previous fitting but return block data as well as human readable data
         """
-        print telPos, starPos
-        try:
-            scale = (telPos[1] - telPos[0])/(starPos[1] - starPos[0])
-        except ZeroDivisionError:
-            scale = 0
-        print scale
+        scale = m * bin
+        print 'plate scale: ' +str(m) + ' pix/deg (binned)'
+        print 'plate scale: ' +str(scale) + ' pix/deg (unbinned)'
+        print 'scale: ' +str(1/(m/3600.)) + ' arcsec/pix (binned)'
+        print 'scale: ' +str(1/(scale/3600.)) + ' arcsec/pix (unbinned)'
         return scale
 
-    def fitData(self, grid = None):
+    def rotAng(self, m = None, c = None):
+        x = 10
+        y = (m*x) + c
+        print x, y, np.pi
+        phi = self.convert(y,x)
+        print phi
+        theta = ((phi*180.)/np.pi)
+        print 'rotation: ' +str(theta)
+        return theta
+
+    def fitData(self, x_arr = None, y_arr = None):
         """
         use numpy lsq fit on the grid of data and return fit equation
         @param grid - A Numpy array of ...
-
         """
-        return 
+        print x_arr, y_arr
+        A = np.vstack([x_arr, np.ones(len(x_arr))]).T
+        #print A
+        m,c = np.linalg.lstsq(A,y_arr)[0]
+        print m,c
+        return m, c
+
+    def convert(self, x = None, y = None):
+        phi = np.arctan2(x, y)
+        return phi
 
     def formData(self, f_in = None):
         """
