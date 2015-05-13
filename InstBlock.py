@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #!/usr/bin/ python
 
 """
@@ -5,6 +6,13 @@ A GUI for the Instrument Block calculations
 """
 
 import os, re, time, subprocess, wx, thread
+=======
+#!/usr/bin/env python
+"""
+User interface for creating instrument block data.
+"""
+import os, time, re, subprocess, wx, thread
+>>>>>>> fecbbd8e29cce6f0476e6e4f39ac173ac5fa5c0f
 import dateutil
 import scipy
 from scipy import stats
