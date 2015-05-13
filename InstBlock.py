@@ -1,5 +1,8 @@
-#! /usr/bin/python
-import os, time, re, time, subprocess, wx, thread
+#!/usr/bin/env python
+"""
+User interface for creating instrument block data.
+"""
+import os, time, re, subprocess, wx, thread
 import dateutil
 import scipy
 from scipy import stats
