@@ -1,0 +1,57 @@
+Feed in text file
+
+x,y = are on chip coordinates
+w,z  = are on sky coordinates
+
+Class GridData
+
+    def rotation_angle(offset=None, starPos=None):
+        '''doc'''
+        
+      Input: offset(w,z), starPos(x,y)
+      m: Rotation Angle(phi) 
+      parameters= PlateScale
+      PlateScale = dStarPos / dOffset
+      
+
+Class RotationData
+      Input: angle(rotAng), starPos(x,y)
+      Output: Boresight(x,y)
+
+Class ParseData
+      Input: dat file
+      Output: array [w,z,x,y] or [phi,x,y]
+
+Class Computation
+      Called from GridData & RotationData
+      does the heavy math using numpy, using lsqfit
+
+
+
+grid data:
+fit data with 9-25 points covering 204.8' FOV on ECAM.
+
+! boresight x, y    star x, y
+!    (deg)       (binned pixels)
+-0.004 -0.004 97 140
+-0.004 0.0 512 126
+-0.004 0.004 930 132
+0.0 0.004 936 547
+0.0 0.0 520 556
+0.0 -0.004 110 536
+0.004 -0.004 105 952
+0.004 0.0 515 958
+0.004 0.004 938 966
+
+
+rotation data
+
+! angle      star x, y
+! (deg)   (binned pixels)
+75.0 520 254
+85.0 539 249 
+95.0 549 215
+105.0 562 193
+115.0 573 176 
+125.0 567 143  
+135.0 560 126 
