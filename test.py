@@ -6,22 +6,27 @@ import instcalc
 class TestGridData(unittest.TestCase):
 	def setUp(self):
 		self.arrGridSimple = [[0,0,0,0],[1.,1.,1.,1.], [2,2,2,2]]
-		self.arrGridComplex = [[0.000 ,0.000,523.48,520.71],[0.000,0.015,535.17,716.88],[0.000,0.030,525.07,906.22]]
+		#self.arrGridComplex = [[0.000 ,0.000,523.48,520.71],[0.000,0.015,535.17,716.88],[0.000,0.030,525.07,906.22]]
 		self.arrBoreSimple = [[0,1,0],[90,0,1],[180,-1,0],[270,0,-1]]
 		self.arrBoreComplex = [[0.0,70.41,699.34],[30.0,226.18,897.68],[60.0,459.81,992.51], \
 							[90.0,707.15,958.16],[-30.0,42.58,448.13],[-60.0,138.37,216.91],[-90.0,337.23,65.37]]
 
-		self.instSimple = instcalc.GridData(self.arrGridSimple)
-		self.instComplex = instcalc.GridData(self.arrGridComplex)
+		arr=self.readFile('data/20120604_spicam_grid.txt')
+		self.arrGridComplex = arr
+
+		self.instSimple = instcalc.GridData(self.arrGridSimple,2)
+		self.instComplex = instcalc.GridData(self.arrGridComplex,2)
 		self.boreSimple = instcalc.BoresightData(self.arrBoreSimple)
 		self.boreComplex = instcalc.BoresightData(self.arrBoreComplex)
 
-	def readFile(self):
+	def readFile(self, fname):
 		tmp=[]
-		f_in = open('data/20120604_spicam_grid.txt')
-		for line in file
-
+		f_in = open(str(fname))
+		for line in f_in:
+			l = line.split()
+			tmp.append([l[0],l[1],l[2],l[3]])
 		f_in.close()
+		return tmp
 
 	"""def test_rotationAngleSimple(self):
 		self.assertEqual(self.instSimple.rotationAngle(),0)"""

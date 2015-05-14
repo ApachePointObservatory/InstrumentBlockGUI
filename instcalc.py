@@ -4,10 +4,11 @@ from scipy import optimize
 import numpy as np
 
 class GridData(object):
-    def __init__(self, data=None):
+    def __init__(self, data=None, bin = None):
         if data is None:
             raise Exception("Data must be specified to create a GridData object.")
         self.data = data
+        self.bin = bin
         
 
     def rotationAngle(self):
@@ -20,14 +21,54 @@ class GridData(object):
         to linear components.  This is how there is a differing X and Y platescale.
         """
         d = np.transpose(self.data)
-        
-        #call in the x and y data to determine rotation
-        m_rot, c_rot = self.fitData(d[2],d[3])
-        self.rotAng(m_rot)
+        #print d[0],d[1],d[2],d[3]
+        #print
+        y_pos = np.unique(d[0])
+        x_pos = np.unique(d[1])
+        #sort the data
+        y_arr = [[],[],[],[]]
+        x_arr = [[],[],[],[]]
 
-        #call in the x telescope and x ccd data to determine plate scale
-        m_scale, c_scale = self.fitData(d[1],d[3])
-        self.plateScale(m_scale, 2)
+        for i,y in enumerate(x_pos):
+            for n,m in enumerate(d[1]):
+                if y == m:
+                    x_arr[i].append([d[0][n],d[1][n],d[2][n],d[3][n]])
+        for i,y in enumerate(y_pos):
+            for n,m in enumerate(d[0]):
+                if y == m:
+                    #print i,n,y,m
+                    #print [d[0][n],d[1][n],d[2][n],d[3][n]]
+                    y_arr[i].append([d[0][n],d[1][n],d[2][n],d[3][n]])
+
+        ymAng=[]
+        ymPlate=[]
+        xmAng=[]
+        xmPlate=[]
+        for index,cat in enumerate(range(len(y_arr)-1)):
+            fit = np.transpose(y_arr[index])
+            print fit
+            #fit the ccd x,y pos for the same x boresight
+            m_rot = self.fitData(fit[2],fit[3])
+            ymAng.append(self.rotAng(m_rot))
+
+            #call in the x telescope and x ccd data to determine plate scale
+            m_scale= self.fitData(fit[1],fit[3])
+            ymPlate.append(self.plateScale(m_scale, self.bin))
+
+        for index,cat in enumerate(range(len(x_arr)-1)):
+            fit = np.transpose(x_arr[index])
+            print fit
+            #fit the ccd x,y pos for the same x boresight
+            m_rot = self.fitData(fit[3],fit[2])
+            xmAng.append(self.rotAng(m_rot))
+
+            #call in the x telescope and x ccd data to determine plate scale
+            m_scale= self.fitData(fit[0],fit[2])
+            xmPlate.append(self.plateScale(m_scale, self.bin))
+
+        print xmAng, xmPlate
+        print ymAng, ymPlate
+
         return 
 
     def plateScale(self, m = None, bin = None):
@@ -49,9 +90,7 @@ class GridData(object):
     def rotAng(self, m = None):
         x = 100
         y = (m*x)
-        print x, y, np.pi
         phi = self.convert(y,x)
-        print phi
         theta = ((phi*180.)/np.pi)
         print 'rotation: ' +str(theta)
         return theta
@@ -61,12 +100,12 @@ class GridData(object):
         use numpy lsq fit on the grid of data and return fit equation
         @param grid - A Numpy array of ...
         """
-        #print x_arr, y_arr
+        print x_arr, y_arr
         A = np.vstack([x_arr, np.ones(len(x_arr))]).T
         #print A
         m,c = np.linalg.lstsq(A,y_arr)[0]
         print m,c
-        return m, c
+        return m
 
     def convert(self, x = None, y = None):
         phi = np.arctan2(x, y)

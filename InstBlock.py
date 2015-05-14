@@ -1,5 +1,4 @@
 #!/usr/bin/ python
-
 """
 User interface for creating instrument block data.
 """
