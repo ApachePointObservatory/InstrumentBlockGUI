@@ -1,9 +1,10 @@
-#!/usr/bin/ python
-"""
-User interface for creating instrument block data.
-"""
-import os, time, subprocess
-import wx
+#! /usr/bin/ python
+import os, time, re, time, subprocess, wx, thread
+import dateutil
+import scipy
+from scipy import stats
+import numpy as np
+import pyfits
 import matplotlib
 matplotlib.use('WXAgg')
 import matplotlib.pyplot as plt
@@ -57,20 +58,31 @@ class InstBlock(wx.Frame):
     def create_main_panel(self):
       self.panel = wx.Panel(self)
 
-      self.pathText=wx.StaticText(self.panel, label='Path: ')
-      self.inPath=wx.TextCtrl(self.panel, size=(500, 20))
+      #creating the matplotlib portion of the panel
+      self.dpi = 100
+      self.fig = Figure((9, 8), dpi=self.dpi)
+      self.canvas = FigCanvas(self.panel,-1,self.fig)
+      #end of matplotlib section
 
-      self.inPath.SetValue('/Users/jwhueh/projects/SDSS/InstBlock/grid.dat')
+      self.pathText=wx.StaticText(self.panel, label='Path: ')
+      self.inPath=wx.TextCtrl(self.panel, size=(500, 20), style=wx.TE_PROCESS_ENTER)
+
+      self.inPath.SetValue('/Users/jwhueh/Desktop/110318_agile_grid.txt')
+      self.Bind(wx.EVT_TEXT_ENTER,self.gridData, self.inPath)
 
       self.gridButton = wx.Button(self.panel, label='Fit Scale && Orientation')
       self.Bind(wx.EVT_BUTTON,self.test, self.gridButton)
 
-      self.xLabel = wx.StaticText(self.panel, label='X', pos=(273,78))
-      self.yLabel = wx.StaticText(self.panel, label='Y', pos=(323,78))
+#beginning of my grid sizer attempt
+      self.empty1 = wx.StaticText(self.panel)
+      self.xLabel = wx.StaticText(self.panel, label='X')
+      self.yLabel = wx.StaticText(self.panel, label='Y')
+      self.empty2 = wx.StaticText(self.panel)
 
       self.binFactor = wx.StaticText(self.panel, label='Bin Factor')
       self.binX = wx.TextCtrl(self.panel,size=(50,-1), value='2')
       self.binY = wx.TextCtrl(self.panel,size=(50,-1), value='3')
+      self.empty3 = wx.StaticText(self.panel)
 
       self.imCtr = wx.StaticText(self.panel, label='Image Center')
       self.imCtrX = wx.TextCtrl(self.panel,size=(100,-1))
@@ -81,34 +93,37 @@ class InstBlock(wx.Frame):
       self.imSclX = wx.TextCtrl(self.panel, size=(100,-1))
       self.imSclY = wx.TextCtrl(self.panel, size=(100,-1))
       self.imSclPixDeg = wx.StaticText(self.panel, label='unbinned pix/deg')
-      
+#end of my grid sizer attempt elements     
       self.aspectLabel = wx.StaticText(self.panel, label='Aspect Ratio is Exact')
       self.aspectRatioBox = wx.CheckBox(self.panel,-1)
       self.aspectRatioBox.SetValue(True)
       self.Bind(wx.EVT_CHECKBOX, self.aspectCheck, self.aspectRatioBox)
 
-      self.oldRot = wx.StaticText(self.panel, label='Old Rotation Instrument Angle')
+      self.oldRot = wx.StaticText(self.panel, label='Prior Inst. Angle')
       self.oldRotDeg = wx.TextCtrl(self.panel, size=(100,-1))
       self.oldRotLabel = wx.StaticText(self.panel, label='deg')
-      self.newRot = wx.StaticText(self.panel, label='New Rotation Instrument Angle')
+      self.newRot = wx.StaticText(self.panel, label='New Inst. Angle')
       self.newRotDeg = wx.TextCtrl(self.panel, size=(100,-1))
       self.newRotLabel = wx.StaticText(self.panel, label='deg')
+#beginning of grid sizer attempts
+      self.empty4 = wx.StaticText(self.panel)
+      self.xLabel2 = wx.StaticText(self.panel, label='X')
+      self.yLabel2 = wx.StaticText(self.panel, label='Y')
+      self.empty5 = wx.StaticText(self.panel)
 
-      self.xLabel2 = wx.StaticText(self.panel, label='X', pos=(300,328))
-      self.yLabel2 = wx.StaticText(self.panel, label='Y', pos=(400,328))
-
-      self.oldRotXY = wx.StaticText(self.panel, label='Old Rotation Instrument Coordinates')
+      self.oldRotXY = wx.StaticText(self.panel, label='Prior Inst Coords')
       self.oldRotX = wx.TextCtrl(self.panel, size=(100,-1))
       self.oldRotY = wx.TextCtrl(self.panel, size=(100,-1))
       self.oldRotSkyDegLabel = wx.StaticText(self.panel, label='deg on sky')
-      self.newRotXY = wx.StaticText(self.panel, label='New Rotation Instrument Coordinates')
+
+      self.newRotXY = wx.StaticText(self.panel, label='New Inst Coords')
       self.newRotX = wx.TextCtrl(self.panel, size=(100,-1))
       self.newRotY = wx.TextCtrl(self.panel, size=(100,-1))
       self.newRotSkyDegLabel = wx.StaticText(self.panel, label='deg on sky')
-
+#end of my 2nd grid sizer attempt elements
       self.noteToUser = wx.StaticText(self.panel, label='If this instrument is also a full-frame guider (the whole CCD is one probe),\n e.g., 3.5m NA2 guider, then...')
 
-      self.newGPRot = wx.StaticText(self.panel, label='New Guider Position Rotation Coordinates')
+      self.newGPRot = wx.StaticText(self.panel, label='New Guider Coords')
       self.newGPRotX = wx.TextCtrl(self.panel, size=(100,-1))
       self.newGPRotY = wx.TextCtrl(self.panel, size=(100,-1))
       self.newGPRotLabel = wx.StaticText(self.panel, label='deg on sky')
@@ -123,21 +138,21 @@ class InstBlock(wx.Frame):
       self.log=wx.TextCtrl(self.panel,size=(400,200),style=wx.TE_MULTILINE)
 
       #defining horizontal sizers
+      self.mainSizer=wx.BoxSizer(wx.HORIZONTAL)
       self.topSizer=wx.BoxSizer(wx.VERTICAL)
+      self.top2Sizer=wx.BoxSizer(wx.VERTICAL)
       self.pathSizer=wx.BoxSizer(wx.HORIZONTAL)
       self.comboSizer=wx.BoxSizer(wx.HORIZONTAL)
-      self.binSizer=wx.BoxSizer(wx.HORIZONTAL)
-      self.imSizer=wx.BoxSizer(wx.HORIZONTAL)
       self.logSizer=wx.BoxSizer(wx.HORIZONTAL)
+
+      self.imageSizer=wx.GridSizer(rows=4,cols=4,hgap=5,vgap=5)
       self.regionSizer=wx.GridSizer(2,4,3,3)
     
       self.checkSizer=wx.BoxSizer(wx.HORIZONTAL)
-      self.im2Sizer=wx.BoxSizer(wx.HORIZONTAL)
       self.oldRotSizer=wx.BoxSizer(wx.HORIZONTAL)
       self.newRotSizer=wx.BoxSizer(wx.HORIZONTAL)
       
-      self.oldRotXYSizer=wx.BoxSizer(wx.HORIZONTAL)
-      self.newRotXYSizer=wx.BoxSizer(wx.HORIZONTAL)
+      self.rotXYSizer=wx.GridSizer(rows=3,cols=4,hgap=5,vgap=5)
       self.newGPSizer=wx.BoxSizer(wx.HORIZONTAL)
       self.noteSizer=wx.BoxSizer(wx.HORIZONTAL)
       self.fitButtonSizer=wx.BoxSizer(wx.HORIZONTAL)
@@ -148,21 +163,28 @@ class InstBlock(wx.Frame):
       self.pathSizer.Add(self.inPath,0,wx.EXPAND)
 
       self.comboSizer.Add(self.comboLabel,0,wx.EXPAND)
-      self.comboSizer.Add(self.combo,0,wx.EXPAND)
+      self.comboSizer.Add(self.combo,0)
 
-      self.binSizer.Add(self.binFactor,0,wx.EXPAND)
-      self.binSizer.Add(self.binX,0,wx.EXPAND)
-      self.binSizer.Add(self.binY,0,wx.EXPAND)
+      self.imageSizer.Add(self.empty1,0,wx.EXPAND)
+      self.imageSizer.Add(self.xLabel,0,wx.ALIGN_CENTER)
+      self.imageSizer.Add(self.yLabel,0,wx.ALIGN_CENTER)
+      self.imageSizer.Add(self.empty2,0,wx.EXPAND)
+
+      self.imageSizer.Add(self.binFactor,0,wx.ALIGN_RIGHT)
+      self.imageSizer.Add(self.binX,0,wx.ALIGN_CENTER)
+      self.imageSizer.Add(self.binY,0,wx.ALIGN_CENTER)
+      self.imageSizer.Add(self.empty3,0,wx.ALIGN_RIGHT)
       
-      self.imSizer.Add(self.imCtr,0,wx.EXPAND)
-      self.imSizer.Add(self.imCtrX,0,wx.EXPAND)
-      self.imSizer.Add(self.imCtrY,0,wx.EXPAND)
-      self.imSizer.Add(self.imCtrPix,0,wx.EXPAND)
+      self.imageSizer.Add(self.imCtr,0,wx.ALIGN_RIGHT)
+      self.imageSizer.Add(self.imCtrX,0,wx.ALIGN_CENTER)
+      self.imageSizer.Add(self.imCtrY,0,wx.ALIGN_CENTER)
+      self.imageSizer.Add(self.imCtrPix,0,wx.ALIGN_LEFT)
 
-      self.im2Sizer.Add(self.imScl,0,wx.EXPAND)
-      self.im2Sizer.Add(self.imSclX,0,wx.EXPAND)
-      self.im2Sizer.Add(self.imSclY,0,wx.EXPAND)
-      self.im2Sizer.Add(self.imSclPixDeg,0,wx.EXPAND)
+      self.imageSizer.Add(self.imScl,0,wx.ALIGN_RIGHT)
+      self.imageSizer.Add(self.imSclX,0,wx.ALIGN_CENTER)
+      self.imageSizer.Add(self.imSclY,0,wx.ALIGN_CENTER)
+      self.imageSizer.Add(self.imSclPixDeg,0,wx.ALIGN_LEFT)
+      
 
       self.checkSizer.Add(self.aspectRatioBox,0,wx.EXPAND)
       self.checkSizer.Add(self.aspectLabel,0,wx.EXPAND)
@@ -176,15 +198,20 @@ class InstBlock(wx.Frame):
 
       self.fitSclSizer.Add(self.gridButton,0,wx.EXPAND)
 
-      self.oldRotXYSizer.Add(self.oldRotXY,0,wx.EXPAND)
-      self.oldRotXYSizer.Add(self.oldRotX,0,wx.EXPAND)
-      self.oldRotXYSizer.Add(self.oldRotY,0,wx.EXPAND)
-      self.oldRotXYSizer.Add(self.oldRotSkyDegLabel,0,wx.EXPAND)
+      self.rotXYSizer.Add(self.empty4,0,wx.EXPAND)
+      self.rotXYSizer.Add(self.xLabel2,0,wx.ALIGN_CENTER)
+      self.rotXYSizer.Add(self.yLabel2,0,wx.ALIGN_CENTER)
+      self.rotXYSizer.Add(self.empty5,0,wx.EXPAND)
+      
+      self.rotXYSizer.Add(self.oldRotXY,0,wx.ALIGN_RIGHT)
+      self.rotXYSizer.Add(self.oldRotX,0,wx.ALIGN_CENTER)
+      self.rotXYSizer.Add(self.oldRotY,0,wx.ALIGN_CENTER)
+      self.rotXYSizer.Add(self.oldRotSkyDegLabel,0,wx.ALIGN_LEFT)
 
-      self.newRotXYSizer.Add(self.newRotXY,0,wx.EXPAND)
-      self.newRotXYSizer.Add(self.newRotX,0,wx.EXPAND)
-      self.newRotXYSizer.Add(self.newRotY,0,wx.EXPAND)
-      self.newRotXYSizer.Add(self.newRotSkyDegLabel,0,wx.EXPAND)
+      self.rotXYSizer.Add(self.newRotXY,0,wx.ALIGN_RIGHT)
+      self.rotXYSizer.Add(self.newRotX,0,wx.ALIGN_CENTER)
+      self.rotXYSizer.Add(self.newRotY,0,wx.ALIGN_CENTER)
+      self.rotXYSizer.Add(self.newRotSkyDegLabel,0,wx.ALIGN_LEFT)
 
       self.newGPSizer.Add(self.newGPRot,0,wx.EXPAND)
       self.newGPSizer.Add(self.newGPRotX,0,wx.EXPAND)
@@ -195,20 +222,16 @@ class InstBlock(wx.Frame):
 
       self.fitButtonSizer.Add(self.fitButton,0,wx.EXPAND)
       self.logSizer.Add(self.log,0,wx.EXPAND)
+
   
       #fitting everything in the vertical sizer
       self.topSizer.AddSpacer(15)
       self.topSizer.Add(self.pathSizer,0,wx.ALIGN_CENTER)
       self.topSizer.AddSpacer(10)
       self.topSizer.Add(self.comboSizer,0,wx.ALIGN_CENTER)
-      self.topSizer.AddSpacer(20)
-      self.topSizer.AddSpacer(5)
-      self.topSizer.Add(self.binSizer,0,wx.ALIGN_CENTER)
+      self.topSizer.AddSpacer(15)
+      self.topSizer.Add(self.imageSizer,0,wx.ALIGN_RIGHT)
       self.topSizer.AddSpacer(10)
-      self.topSizer.Add(self.imSizer,0,wx.ALIGN_CENTER)
-      self.topSizer.AddSpacer(10)
-      self.topSizer.Add(self.im2Sizer,0,wx.ALIGN_CENTER)
-      self.topSizer.AddSpacer(5)
       self.topSizer.Add(self.checkSizer,0,wx.ALIGN_CENTER)
       self.topSizer.AddSpacer(15)
       self.topSizer.Add(self.oldRotSizer,0,wx.ALIGN_CENTER)
@@ -216,10 +239,8 @@ class InstBlock(wx.Frame):
       self.topSizer.Add(self.newRotSizer,0,wx.ALIGN_CENTER)
       self.topSizer.AddSpacer(10)
       self.topSizer.Add(self.fitSclSizer,0,wx.ALIGN_CENTER)
-      self.topSizer.AddSpacer(30)
-      self.topSizer.Add(self.oldRotXYSizer,0,wx.ALIGN_CENTER)
-      self.topSizer.AddSpacer(5)
-      self.topSizer.Add(self.newRotXYSizer,0,wx.ALIGN_CENTER)
+      self.topSizer.AddSpacer(10)
+      self.topSizer.Add(self.rotXYSizer,0,wx.ALIGN_CENTER)
       self.topSizer.AddSpacer(25)
       self.topSizer.Add(self.noteSizer,0,wx.ALIGN_CENTER)
       self.topSizer.AddSpacer(25)
@@ -227,20 +248,23 @@ class InstBlock(wx.Frame):
       self.topSizer.AddSpacer(5)
       self.topSizer.Add(self.fitButtonSizer,0,wx.ALIGN_CENTER)
       self.topSizer.AddSpacer(5)
-      self.topSizer.Add(self.logSizer,0,wx.ALIGN_CENTER)
+      self.topSizer.Add(self.logSizer,0,wx.ALIGN_CENTER)      
+      self.top2Sizer.Add(self.canvas,0,wx.ALIGN_CENTER)
+      self.mainSizer.Add(self.topSizer,0)
+      self.mainSizer.AddSpacer(100)
+      self.mainSizer.Add(self.top2Sizer,0)
       
-      self.panel.SetSizer(self.topSizer)
-      self.topSizer.Fit(self)
+      self.panel.SetSizer(self.mainSizer)
+      self.mainSizer.Fit(self)
       
+    def onAbout(self,event):
+        dlg=wx.MessageDialog(self,'DIS Linearity Analysis\n', 'About', wx.OK)
+        dlg.ShowModal()
+        dlg.Destroy()
+        return
 
     def onExit(self,event):
         self.Close(True)
-
-    def onAbout(self, event):
-        dlg=wx.MessageDialog(self,'SDSS Instrument Block Fitter\n'                    
-                             ,'About', wx.OK)
-        dlg.ShowModal()
-        dlg.Destroy()
 
     def test(self,event):
         print 'a button was pressed'
@@ -258,7 +282,60 @@ class InstBlock(wx.Frame):
         print "Fit Position button clicked"
         return
 
+    def on_graph_button(self,event):
+        print "clicked graph button"
+        return
+
+
+    def gridData(self,event):
+        filename = self.inPath.GetValue()
+        file = open(filename,'r')
+        line = file.readline().lstrip()
     
+        ccd_offx = []
+        ccd_offy = []
+
+        while line:
+            line_seg = line.split()
+            ccd_offx.append(line_seg[2])
+            ccd_offy.append(line_seg[3])
+            line = file.readline().lstrip()
+
+        file.close()
+
+        filename_ring = filename.replace('grid','ring')
+        
+        file_ring = open(filename_ring,'r')
+        line_ring = file_ring.readline().lstrip()
+
+        star_x = []
+        star_y = []
+        
+        while line_ring:
+            line_seg = line_ring.split()
+            star_x.append(line_seg[1])
+            star_y.append(line_seg[2])
+            line_ring = file_ring.readline().lstrip()
+
+        file_ring.close()
+
+        #graphing the ccd offset
+        self.ax1 = self.fig.add_subplot(211)
+        self.ax1.set_title('Grid')
+        self.ax1.set_ylabel('y')
+        self.ax1.set_xlabel('x')
+        self.ax1.plot(ccd_offx,ccd_offy,'o',clip_on=False)
+
+        #graphing the ring data
+        self.ax3 = self.fig.add_subplot(212)
+        self.ax3.set_title('Ring')
+        self.ax3.set_xlabel('x')
+        self.ax3.set_ylabel('y')
+        self.ax3.plot(star_x,star_y,'o',clip_on=False)
+
+        self.canvas.draw()
+        return
+     
 if __name__=="__main__":
   app = wx.App()
   app.frame = InstBlock(None, 'SDSS Instrument Block')
