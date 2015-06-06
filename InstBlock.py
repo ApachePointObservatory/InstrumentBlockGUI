@@ -1,5 +1,6 @@
 #! /usr/bin/ python
 import os, time, re, time, subprocess, wx, thread
+import instcalc
 import dateutil
 import scipy
 from scipy import stats
@@ -55,6 +56,7 @@ class InstBlock(wx.Frame):
     def create_status_bar(self):
         self.statusbar = self.CreateStatusBar()
 
+    #defining all the elements of the main panel, text boxes, buttons, etc.
     def create_main_panel(self):
       self.panel = wx.Panel(self)
 
@@ -73,7 +75,6 @@ class InstBlock(wx.Frame):
       self.gridButton = wx.Button(self.panel, label='Fit Scale && Orientation')
       self.Bind(wx.EVT_BUTTON,self.test, self.gridButton)
 
-#beginning of my grid sizer attempt
       self.empty1 = wx.StaticText(self.panel)
       self.xLabel = wx.StaticText(self.panel, label='X')
       self.yLabel = wx.StaticText(self.panel, label='Y')
@@ -93,7 +94,7 @@ class InstBlock(wx.Frame):
       self.imSclX = wx.TextCtrl(self.panel, size=(100,-1))
       self.imSclY = wx.TextCtrl(self.panel, size=(100,-1))
       self.imSclPixDeg = wx.StaticText(self.panel, label='unbinned pix/deg')
-#end of my grid sizer attempt elements     
+
       self.aspectLabel = wx.StaticText(self.panel, label='Aspect Ratio is Exact')
       self.aspectRatioBox = wx.CheckBox(self.panel,-1)
       self.aspectRatioBox.SetValue(True)
@@ -105,7 +106,7 @@ class InstBlock(wx.Frame):
       self.newRot = wx.StaticText(self.panel, label='New Inst. Angle')
       self.newRotDeg = wx.TextCtrl(self.panel, size=(100,-1))
       self.newRotLabel = wx.StaticText(self.panel, label='deg')
-#beginning of grid sizer attempts
+
       self.empty4 = wx.StaticText(self.panel)
       self.xLabel2 = wx.StaticText(self.panel, label='X')
       self.yLabel2 = wx.StaticText(self.panel, label='Y')
@@ -120,7 +121,7 @@ class InstBlock(wx.Frame):
       self.newRotX = wx.TextCtrl(self.panel, size=(100,-1))
       self.newRotY = wx.TextCtrl(self.panel, size=(100,-1))
       self.newRotSkyDegLabel = wx.StaticText(self.panel, label='deg on sky')
-#end of my 2nd grid sizer attempt elements
+
       self.noteToUser = wx.StaticText(self.panel, label='If this instrument is also a full-frame guider (the whole CCD is one probe),\n e.g., 3.5m NA2 guider, then...')
 
       self.newGPRot = wx.StaticText(self.panel, label='New Guider Coords')
@@ -267,7 +268,7 @@ class InstBlock(wx.Frame):
         self.Close(True)
 
     def test(self,event):
-        print 'a button was pressed'
+        print 'Fit Scale and Orientation button was pressed'
         return
 
     def dataTypeSelect(self,event):
