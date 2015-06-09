@@ -118,7 +118,7 @@ class GridData(object):
         return
 
 class BoresightData(object):
-    def __init__(self, data = None):
+    def __init__(self, data = object):
         if data is None:
             raise Exception("Data must be specified to create a GridData object.")
         self.data = data
@@ -146,15 +146,21 @@ class BoresightData(object):
         calculate the center of the circle or arc.
         modified from: http://wiki.scipy.org/Cookbook/Least_Squares_Circle
         """
-        d = np.transpose(self.data)
-        x, y = d[1], d[2]
+        
+        x, y = self.data[0], self.data[1]
         center_estimate = np.mean(x), np.mean(y)
+        print center_estimate
         center, ier = optimize.leastsq(self.f, center_estimate, args=(x,y))
         xc, yc = center
-        Ri = self.calcRadius(x, y, *center)
-        R = Ri.mean()
-        res = np.sum((Ri - R)**2)
-        print xc, yc, ier
-        return xc, yc
+        print center
+        print xc
+        print yc
+        print ier
+        #Ri = self.calcRadius(x, y, *center)
+        #R = Ri.mean()
+        #res = np.sum((Ri - R)**2)
+        #print xc, yc, ier
+        #return xc, yc
+        return
 
     
