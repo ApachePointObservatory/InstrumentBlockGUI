@@ -14,7 +14,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import \
     FigureCanvasWxAgg as FigCanvas, \
     NavigationToolbar2WxAgg as NavigationToolbar
-
+import instcalc
 __author__ = "Joseph Huehnerhoff"
 __date__="Date: 2015/05/12"
 """
@@ -69,8 +69,8 @@ class InstBlock(wx.Frame):
       self.pathText=wx.StaticText(self.panel, label='Path: ')
       self.inPath=wx.TextCtrl(self.panel, size=(500, 20), style=wx.TE_PROCESS_ENTER)
 
-      self.inPath.SetValue('/Users/jwhueh/Desktop/110318_agile_grid.txt')
-      self.Bind(wx.EVT_TEXT_ENTER,self.gridData, self.inPath)
+      self.inPath.SetValue('/Users/jwhueh/Caitlin/InstrumentBlockGUI/110318_agile_ring.txt')
+      self.Bind(wx.EVT_TEXT_ENTER,self.fileRead, self.inPath)
 
       self.gridButton = wx.Button(self.panel, label='Fit Scale && Orientation')
       self.Bind(wx.EVT_BUTTON,self.test, self.gridButton)
@@ -134,7 +134,7 @@ class InstBlock(wx.Frame):
       self.Bind(wx.EVT_COMBOBOX, self.dataTypeSelect, self.combo)
       
       self.fitButton = wx.Button(self.panel, label='Fit Position')
-      self.Bind(wx.EVT_BUTTON, self.onFitPos, self.fitButton)
+      self.Bind(wx.EVT_BUTTON, self.fileRead, self.fitButton)
 
       self.log=wx.TextCtrl(self.panel,size=(400,200),style=wx.TE_MULTILINE)
 
@@ -280,14 +280,40 @@ class InstBlock(wx.Frame):
         return
     
     def onFitPos(self,event):
-        print "Fit Position button clicked"
+        
         return
 
     def on_graph_button(self,event):
         print "clicked graph button"
         return
 
+    #takes event from user entered file, takes coordinates from given file
+    def fileRead(self,event):
+        dataRing = False
+        filename = self.inPath.GetValue()
+        file = open(filename,'r')
+        line = file.readline().lstrip()
+        if 'ring' in filename:
+            dataRing = True
 
+        x_coo = []
+        y_coo = []
+        
+        while line:
+            line_seg = line.split()
+
+            if dataRing == False:
+                pass
+            else:
+                x_coo.append(float(line_seg[1]))
+                y_coo.append(float(line_seg[2]))
+            line = file.readline().lstrip()
+
+        file.close()
+        object = [x_coo,y_coo]
+        graphing = instcalc.BoresightData(object)
+        graphing.boresightPos()
+    
     def gridData(self,event):
         filename = self.inPath.GetValue()
         file = open(filename,'r')
