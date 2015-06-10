@@ -14,7 +14,6 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_wxagg import \
     FigureCanvasWxAgg as FigCanvas, \
     NavigationToolbar2WxAgg as NavigationToolbar
-import instcalc
 __author__ = "Joseph Huehnerhoff"
 __date__="Date: 2015/05/12"
 """
@@ -64,16 +63,22 @@ class InstBlock(wx.Frame):
       self.dpi = 100
       self.fig = Figure((9, 8), dpi=self.dpi)
       self.canvas = FigCanvas(self.panel,-1,self.fig)
+      
       #end of matplotlib section
 
-      self.pathText=wx.StaticText(self.panel, label='Path: ')
-      self.inPath=wx.TextCtrl(self.panel, size=(500, 20), style=wx.TE_PROCESS_ENTER)
-
+      self.pathText=wx.StaticText(self.panel, label='ring path: ')
+      self.inPath=wx.TextCtrl(self.panel, size=(500, 20),style=wx.TE_PROCESS_ENTER)
       self.inPath.SetValue('/Users/jwhueh/Caitlin/InstrumentBlockGUI/110318_agile_ring.txt')
-      self.Bind(wx.EVT_TEXT_ENTER,self.fileRead, self.inPath)
 
+      self.fitButton = wx.Button(self.panel, label='Fit Position')
+      self.Bind(wx.EVT_BUTTON, self.fileRead, self.fitButton)
+
+      self.path2Text=wx.StaticText(self.panel,label='grid path: ')
+      self.inPath2=wx.TextCtrl(self.panel, size=(500,20),style=wx.TE_PROCESS_ENTER)
+      self.inPath2.SetValue('/Users/jwhueh/Caitlin/InstrumentBlockGUI/110318_agile_grid.txt')
+      
       self.gridButton = wx.Button(self.panel, label='Fit Scale && Orientation')
-      self.Bind(wx.EVT_BUTTON,self.test, self.gridButton)
+      self.Bind(wx.EVT_BUTTON,self.fileRead, self.gridButton)
 
       self.empty1 = wx.StaticText(self.panel)
       self.xLabel = wx.StaticText(self.panel, label='X')
@@ -133,9 +138,6 @@ class InstBlock(wx.Frame):
       self.combo=wx.ComboBox(self.panel,-1,choices=['Guider','Instrument'],style=wx.CB_READONLY)
       self.Bind(wx.EVT_COMBOBOX, self.dataTypeSelect, self.combo)
       
-      self.fitButton = wx.Button(self.panel, label='Fit Position')
-      self.Bind(wx.EVT_BUTTON, self.fileRead, self.fitButton)
-
       self.log=wx.TextCtrl(self.panel,size=(400,200),style=wx.TE_MULTILINE)
 
       #defining horizontal sizers
@@ -143,6 +145,7 @@ class InstBlock(wx.Frame):
       self.topSizer=wx.BoxSizer(wx.VERTICAL)
       self.top2Sizer=wx.BoxSizer(wx.VERTICAL)
       self.pathSizer=wx.BoxSizer(wx.HORIZONTAL)
+      self.path2Sizer=wx.BoxSizer(wx.HORIZONTAL)
       self.comboSizer=wx.BoxSizer(wx.HORIZONTAL)
       self.logSizer=wx.BoxSizer(wx.HORIZONTAL)
 
@@ -162,6 +165,9 @@ class InstBlock(wx.Frame):
       #adding parts to horizontal sizers
       self.pathSizer.Add(self.pathText,0,wx.EXPAND)
       self.pathSizer.Add(self.inPath,0,wx.EXPAND)
+      
+      self.path2Sizer.Add(self.path2Text,0,wx.EXPAND)
+      self.path2Sizer.Add(self.inPath2,0,wx.EXPAND)
 
       self.comboSizer.Add(self.comboLabel,0,wx.EXPAND)
       self.comboSizer.Add(self.combo,0)
@@ -228,6 +234,8 @@ class InstBlock(wx.Frame):
       #fitting everything in the vertical sizer
       self.topSizer.AddSpacer(15)
       self.topSizer.Add(self.pathSizer,0,wx.ALIGN_CENTER)
+      self.topSizer.AddSpacer(5)
+      self.topSizer.Add(self.path2Sizer,0,wx.ALIGN_CENTER)
       self.topSizer.AddSpacer(10)
       self.topSizer.Add(self.comboSizer,0,wx.ALIGN_CENTER)
       self.topSizer.AddSpacer(15)
@@ -267,10 +275,6 @@ class InstBlock(wx.Frame):
     def onExit(self,event):
         self.Close(True)
 
-    def test(self,event):
-        print 'Fit Scale and Orientation button was pressed'
-        return
-
     def dataTypeSelect(self,event):
         print "data type selected"
         return
@@ -279,22 +283,23 @@ class InstBlock(wx.Frame):
         print "aspect ratio box checked"
         return
     
-    def onFitPos(self,event):
-        
-        return
-
     def on_graph_button(self,event):
         print "clicked graph button"
         return
 
     #takes event from user entered file, takes coordinates from given file
     def fileRead(self,event):
-        dataRing = False
-        filename = self.inPath.GetValue()
+        dataRing = True
+        if event.GetId() == -2018:
+            dataRing = False
+
+        if dataRing == True:
+            filename = self.inPath.GetValue()
+        else:
+            filename=self.inPath2.GetValue()
+
         file = open(filename,'r')
         line = file.readline().lstrip()
-        if 'ring' in filename:
-            dataRing = True
 
         x_coo = []
         y_coo = []
@@ -303,7 +308,8 @@ class InstBlock(wx.Frame):
             line_seg = line.split()
 
             if dataRing == False:
-                pass
+                x_coo.append(float(line_seg[2]))
+                y_coo.append(float(line_seg[3]))
             else:
                 x_coo.append(float(line_seg[1]))
                 y_coo.append(float(line_seg[2]))
@@ -311,58 +317,15 @@ class InstBlock(wx.Frame):
 
         file.close()
         object = [x_coo,y_coo]
-        graphing = instcalc.BoresightData(object)
-        graphing.boresightPos()
-    
-    def gridData(self,event):
-        filename = self.inPath.GetValue()
-        file = open(filename,'r')
-        line = file.readline().lstrip()
-    
-        ccd_offx = []
-        ccd_offy = []
-
-        while line:
-            line_seg = line.split()
-            ccd_offx.append(line_seg[2])
-            ccd_offy.append(line_seg[3])
-            line = file.readline().lstrip()
-
-        file.close()
-
-        filename_ring = filename.replace('grid','ring')
-        
-        file_ring = open(filename_ring,'r')
-        line_ring = file_ring.readline().lstrip()
-
-        star_x = []
-        star_y = []
-        
-        while line_ring:
-            line_seg = line_ring.split()
-            star_x.append(line_seg[1])
-            star_y.append(line_seg[2])
-            line_ring = file_ring.readline().lstrip()
-
-        file_ring.close()
-
-        #graphing the ccd offset
-        self.ax1 = self.fig.add_subplot(211)
-        self.ax1.set_title('Grid')
-        self.ax1.set_ylabel('y')
-        self.ax1.set_xlabel('x')
-        self.ax1.plot(ccd_offx,ccd_offy,'o',clip_on=False)
-
-        #graphing the ring data
-        self.ax3 = self.fig.add_subplot(212)
-        self.ax3.set_title('Ring')
-        self.ax3.set_xlabel('x')
-        self.ax3.set_ylabel('y')
-        self.ax3.plot(star_x,star_y,'o',clip_on=False)
-
-        self.canvas.draw()
-        return
-     
+        if dataRing == True:
+            graphing = instcalc.BoresightData(object)
+            graphing.boresightPos(self.canvas,self.fig)
+        else:
+            graphing = instcalc.GridData(object)
+            #graphing.rotationAngle(self.canvas,self.fig)
+            #test the graphGrid
+            graphing.graphGrid(self.canvas,self.fig)
+            
 if __name__=="__main__":
   app = wx.App()
   app.frame = InstBlock(None, 'SDSS Instrument Block')
