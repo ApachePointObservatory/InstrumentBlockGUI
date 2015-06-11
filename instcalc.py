@@ -42,6 +42,8 @@ class GridData(object):
         rotang_list = []
         for i in range(len(slope_list)):
             rotang_list.append(self.rotAng(slope_list[i]))
+            self.plateScale(rotang_list[i],self.bin)
+            print '\n'
         #d = np.transpose(self.data)
         #print d[0],d[1],d[2],d[3]
         #print
@@ -128,7 +130,7 @@ class GridData(object):
         m,c = np.linalg.lstsq(A,y_arr)[0]
         return m, c
 
-    def convert(self, x = None, y = None):
+    def convert(self, x, y):
         phi = np.arctan2(x, y)
         return phi
 
