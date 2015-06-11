@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from operator import itemgetter
 
 class GridData(object):
-    def __init__(self, data=None, bin = 2):
+    def __init__(self, data, bin = 2):
         if data is None:
             raise Exception("Data must be specified to create a GridData object.")
         self.data = data
@@ -38,6 +38,10 @@ class GridData(object):
             slope, yint = self.fitData(item)
             slope_list.append(slope)
             yint_list.append(yint)
+
+        rotang_list = []
+        for i in range(len(slope_list)):
+            rotang_list.append(self.rotAng(slope_list[i]))
         #d = np.transpose(self.data)
         #print d[0],d[1],d[2],d[3]
         #print
@@ -86,10 +90,10 @@ class GridData(object):
 
         print xmAng, xmPlate
         print ymAng, ymPlate"""
-        self.graphGrid(canvas,fig,slope_list,yint_list)
+        self.graphGrid(canvas,fig,slope_list,yint_list,rotang_list)
         return 
 
-    def plateScale(self, m = None, bin = None):
+    def plateScale(self, m, bin):
         """
         calculate the plate scale based on two input observations.
         Change this so that it is not taking x and y data, but generalize
@@ -134,14 +138,16 @@ class GridData(object):
         """
         return
 
-    def graphGrid(self,canvas,fig,slope_list,yint_list):
+    def graphGrid(self,canvas,fig,slope_list,yint_list,rotang_list):
         self.ax1 = fig.add_subplot(211)
         self.ax1.clear()
+
         #plots the intial grid data
         self.ax1.set_title('Grid')
         self.ax1.set_ylabel('y')
         self.ax1.set_xlabel('x')
         self.ax1.plot(self.data[0],self.data[1],'o',clip_on=False,ms=2)
+
         #plots the fit of each grid line
         for i in range(len(slope_list)):
             y = range(int(min(self.data[1])),int(max(self.data[1])))
@@ -149,6 +155,7 @@ class GridData(object):
             for j in range(len(y)):
                 x.append((y[j]-yint_list[i])/slope_list[i])
             self.ax1.plot(x,y)
+            self.ax1.annotate('rotAng = %.2f'%(rotang_list[i]),(min(x),min(y)),fontsize=8)
         self.ax1.set_aspect('equal',adjustable='box')
         canvas.draw()
         return
