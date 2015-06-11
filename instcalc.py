@@ -24,74 +24,38 @@ class GridData(object):
         to linear components.  This is how there is a differing X and Y platescale.
         """
         comb_coords = []
+
         for i in range(len(self.data[0])):
             comb_coords.append((self.data[0][i],self.data[1][i]))
+
         arranged = sorted(comb_coords,key=itemgetter(0))
+
         if len(self.data[0]) == 9:
             line1 = arranged[0:3]
             line2 = arranged[3:6]
             line3 = arranged[6:9]
             line_list = [line1,line2,line3]
+
+        if len(self.data[0]) == 5:
+            line1 = arranged[0:2]
+            line2 = arranged[3:5]
+            line_list = [line1,line2]
+
         slope_list = []
         yint_list = []
+
         for item in line_list:
             slope, yint = self.fitData(item)
             slope_list.append(slope)
             yint_list.append(yint)
 
         rotang_list = []
+
         for i in range(len(slope_list)):
             rotang_list.append(self.rotAng(slope_list[i]))
             self.plateScale(rotang_list[i],self.bin)
             print '\n'
-        #d = np.transpose(self.data)
-        #print d[0],d[1],d[2],d[3]
-        #print
-        """y_pos = np.unique(self.data[0])
-        x_pos = np.unique(self.data[1])
-        #sort the data
-        y_arr = [[],[],[],[]]
-        x_arr = [[],[],[],[]]
 
-        for i,y in enumerate(x_pos):
-            for n,m in enumerate(self.data[1]):
-                if y == m:
-                    x_arr[i].append([self.data[0][n],self.data[1][n],self.data[2][n],self.data[3][n]])
-        for i,y in enumerate(y_pos):
-            for n,m in enumerate(self.data[0]):
-                if y == m:
-                    #print i,n,y,m
-                    #print [d[0][n],d[1][n],d[2][n],d[3][n]]
-                    y_arr[i].append([self.data[0][n],self.data[1][n],self.data[2][n],self.data[3][n]])
-
-        ymAng=[]
-        ymPlate=[]
-        xmAng=[]
-        xmPlate=[]
-        for index,cat in enumerate(range(len(y_arr)-1)):
-            fit = np.transpose(y_arr[index])
-            print fit
-            #fit the ccd x,y pos for the same x boresight
-            m_rot = self.fitData(fit[2],fit[3])
-            ymAng.append(self.rotAng(m_rot))
-
-            #call in the x telescope and x ccd data to determine plate scale
-            m_scale= self.fitData(fit[1],fit[3])
-            ymPlate.append(self.plateScale(m_scale, self.bin))
-
-        for index,cat in enumerate(range(len(x_arr)-1)):
-            fit = np.transpose(x_arr[index])
-            print fit
-            #fit the ccd x,y pos for the same x boresight
-            m_rot = self.fitData(fit[3],fit[2])
-            xmAng.append(self.rotAng(m_rot))
-
-            #call in the x telescope and x ccd data to determine plate scale
-            m_scale= self.fitData(fit[0],fit[2])
-            xmPlate.append(self.plateScale(m_scale, self.bin))
-
-        print xmAng, xmPlate
-        print ymAng, ymPlate"""
         self.graphGrid(canvas,fig,slope_list,yint_list,rotang_list)
         return 
 
@@ -124,8 +88,12 @@ class GridData(object):
         use numpy lsq fit on the grid of data and return fit equation
         @param grid - A Numpy array of ...
         """
-        x_arr = [comb_coords[0][0],comb_coords[1][0],comb_coords[2][0]]
-        y_arr = [comb_coords[0][1],comb_coords[1][1],comb_coords[2][1]]
+        if len(self.data[0]) == 9:
+               x_arr = [comb_coords[0][0],comb_coords[1][0],comb_coords[2][0]]
+               y_arr = [comb_coords[0][1],comb_coords[1][1],comb_coords[2][1]]
+        else:
+               x_arr = [comb_coords[0][0],comb_coords[1][0]]
+               y_arr = [comb_coords[0][1],comb_coords[1][1]]
         A = np.vstack([x_arr, np.ones(len(x_arr))]).T
         m,c = np.linalg.lstsq(A,y_arr)[0]
         return m, c
