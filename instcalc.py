@@ -4,9 +4,10 @@ from scipy import optimize
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+from operator import itemgetter
 
 class GridData(object):
-    def __init__(self, data=None, bin = None):
+    def __init__(self, data=None, bin = 2):
         if data is None:
             raise Exception("Data must be specified to create a GridData object.")
         self.data = data
@@ -22,25 +23,40 @@ class GridData(object):
         The original Igor program has two functions XFit and YFit.  I believe these are fitting N lsq fits 
         to linear components.  This is how there is a differing X and Y platescale.
         """
-        d = np.transpose(self.data)
+        comb_coords = []
+        for i in range(len(self.data[0])):
+            comb_coords.append((self.data[0][i],self.data[1][i]))
+        arranged = sorted(comb_coords,key=itemgetter(0))
+        if len(self.data[0]) == 9:
+            line1 = arranged[0:3]
+            line2 = arranged[3:6]
+            line3 = arranged[6:9]
+            line_list = [line1,line2,line3]
+        slope_list = []
+        yint_list = []
+        for item in line_list:
+            slope, yint = self.fitData(item)
+            slope_list.append(slope)
+            yint_list.append(yint)
+        #d = np.transpose(self.data)
         #print d[0],d[1],d[2],d[3]
         #print
-        y_pos = np.unique(d[0])
-        x_pos = np.unique(d[1])
+        """y_pos = np.unique(self.data[0])
+        x_pos = np.unique(self.data[1])
         #sort the data
         y_arr = [[],[],[],[]]
         x_arr = [[],[],[],[]]
 
         for i,y in enumerate(x_pos):
-            for n,m in enumerate(d[1]):
+            for n,m in enumerate(self.data[1]):
                 if y == m:
-                    x_arr[i].append([d[0][n],d[1][n],d[2][n],d[3][n]])
+                    x_arr[i].append([self.data[0][n],self.data[1][n],self.data[2][n],self.data[3][n]])
         for i,y in enumerate(y_pos):
-            for n,m in enumerate(d[0]):
+            for n,m in enumerate(self.data[0]):
                 if y == m:
                     #print i,n,y,m
                     #print [d[0][n],d[1][n],d[2][n],d[3][n]]
-                    y_arr[i].append([d[0][n],d[1][n],d[2][n],d[3][n]])
+                    y_arr[i].append([self.data[0][n],self.data[1][n],self.data[2][n],self.data[3][n]])
 
         ymAng=[]
         ymPlate=[]
@@ -69,9 +85,8 @@ class GridData(object):
             xmPlate.append(self.plateScale(m_scale, self.bin))
 
         print xmAng, xmPlate
-        print ymAng, ymPlate
-
-        self.graphGrid()
+        print ymAng, ymPlate"""
+        self.graphGrid(canvas,fig,slope_list,yint_list)
         return 
 
     def plateScale(self, m = None, bin = None):
@@ -90,7 +105,7 @@ class GridData(object):
         print 'scale: ' +str(1/(scale/3600.)) + ' arcsec/pix (unbinned)'
         return scale
 
-    def rotAng(self, m = None):
+    def rotAng(self, m):
         x = 100
         y = (m*x)
         phi = self.convert(y,x)
@@ -98,17 +113,16 @@ class GridData(object):
         print 'rotation: ' +str(theta)
         return theta
 
-    def fitData(self, x_arr = None, y_arr = None):
+    def fitData(self, comb_coords):
         """
         use numpy lsq fit on the grid of data and return fit equation
         @param grid - A Numpy array of ...
         """
-        print x_arr, y_arr
+        x_arr = [comb_coords[0][0],comb_coords[1][0],comb_coords[2][0]]
+        y_arr = [comb_coords[0][1],comb_coords[1][1],comb_coords[2][1]]
         A = np.vstack([x_arr, np.ones(len(x_arr))]).T
-        #print A
         m,c = np.linalg.lstsq(A,y_arr)[0]
-        print m,c
-        return m
+        return m, c
 
     def convert(self, x = None, y = None):
         phi = np.arctan2(x, y)
@@ -120,12 +134,21 @@ class GridData(object):
         """
         return
 
-    def graphGrid(self,canvas,fig):
+    def graphGrid(self,canvas,fig,slope_list,yint_list):
         self.ax1 = fig.add_subplot(211)
+        self.ax1.clear()
+        #plots the intial grid data
         self.ax1.set_title('Grid')
         self.ax1.set_ylabel('y')
         self.ax1.set_xlabel('x')
         self.ax1.plot(self.data[0],self.data[1],'o',clip_on=False,ms=2)
+        #plots the fit of each grid line
+        for i in range(len(slope_list)):
+            y = range(int(min(self.data[1])),int(max(self.data[1])))
+            x = []
+            for j in range(len(y)):
+                x.append((y[j]-yint_list[i])/slope_list[i])
+            self.ax1.plot(x,y)
         self.ax1.set_aspect('equal',adjustable='box')
         canvas.draw()
         return
@@ -140,6 +163,7 @@ class BoresightData(object):
         """
         input rotational array and return the center position
         """
+        
         circleInfo = self.findCenter()
         self.graphRing(circleInfo,canvas,fig)
         return
@@ -175,6 +199,7 @@ class BoresightData(object):
     #calculate and display the offset
     def graphRing(self,circleInfo,canvas,fig):
         self.ax1 = fig.add_subplot(212)
+        self.ax1.clear()
         self.ax1.set_title('Ring')
         self.ax1.set_ylabel('y')
         self.ax1.set_xlabel('x')

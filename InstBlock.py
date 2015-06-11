@@ -322,9 +322,9 @@ class InstBlock(wx.Frame):
             graphing.boresightPos(self.canvas,self.fig)
         else:
             graphing = instcalc.GridData(object)
-            #graphing.rotationAngle(self.canvas,self.fig)
+            graphing.rotationAngle(self.canvas,self.fig)
             #test the graphGrid
-            graphing.graphGrid(self.canvas,self.fig)
+            #graphing.graphGrid(self.canvas,self.fig)
             
 if __name__=="__main__":
   app = wx.App()
