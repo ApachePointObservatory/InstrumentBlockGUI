@@ -290,7 +290,6 @@ class InstBlock(wx.Frame):
     #takes event from user entered file, takes coordinates from given file
     def fileRead(self,event):
         dataRing = True
-        print event.GetId()
         if event.GetId() == -2019:
             dataRing = False
 
@@ -312,6 +311,7 @@ class InstBlock(wx.Frame):
             line_seg = line.split()
 
             if dataRing == False:
+                print 'dataring is false'
                 first.append(float(line_seg[0]))
                 second.append(float(line_seg[1]))
                 x_coo.append(float(line_seg[2]))
@@ -322,16 +322,70 @@ class InstBlock(wx.Frame):
             line = file.readline().lstrip()
 
         file.close()
-        object = [first,second,x_coo,y_coo]
+        
         if dataRing == True:
-            #graphing = instcalc.BoresightData(object)
-            #graphing.boresightPos(self.canvas,self.fig)
-            print 'ring'
+            object = [x_coo,y_coo]
+            graphing = instcalc.BoresightData(object)
+            circleInfo = graphing.boresightPos()
+            self.graphRing(circleInfo,object)
         else:
-            graphing = instcalc.GridData(object)
-            graphing.rotationAngle(self.canvas,self.fig)
+            object = [first,second,x_coo,y_coo]
+            graphing = instcalc.GridData(object,2)
+            graphing.rotationAngle()
             #test the graphGrid
             #graphing.graphGrid(self.canvas,self.fig)
+
+#graphs the data points taken from the file, plots the centerpoint and circle estimate, calls to nearCircle to 
+    #calculate and display the offset
+    def graphRing(self,circleInfo,object):
+        self.ax1 = self.fig.add_subplot(212)
+        self.ax1.clear()
+        self.ax1.set_title('Ring')
+        self.ax1.set_ylabel('y')
+        self.ax1.set_xlabel('x')
+        self.ax1.plot(object[0],object[1],'o',clip_on=False,ms=2)
+        self.ax1.plot(circleInfo[0],circleInfo[1],'ro')
+        circle = plt.Circle((circleInfo[0],circleInfo[1]),circleInfo[2],color='r',fill=False)
+        self.ax1.add_artist(circle)
+        self.ax1.set_aspect('equal',adjustable='box')
+        for i in range(len(object[0])):
+            offset = self.nearCircle(object[0][i],object[1][i],circleInfo[0],circleInfo[1],circleInfo[2],self.ax1)
+            self.ax1.annotate('(%.2f,%.2f)'%(offset[0],offset[1]),(object[0][i]+5,object[1][i]+5),fontsize=8)
+        self.canvas.draw()
+        return
+
+    #defines the line y = mx+b connecting the given data point (x,y) and the circle's centerpoint (xc,yc) then
+    #defines circle using centerpoint and radius, finds intersections of the circle and the line
+    #and selects the nearest one, with A, B, and C being the points in the quadratic equation of 
+    def nearCircle(self,x,y,xc,yc,R,ax1):
+        #finding the zeros of the x values
+        m = (y-yc)/(x-xc)
+        b = y-m*x
+        Ax = 1+m**2
+        Bx = 2*(-xc+m*(b-yc))
+        Cx = xc**2+b**2+yc**2-2*b*yc-R**2
+        coeffx = [Ax,Bx,Cx]
+        solsx = np.roots(coeffx)
+        closex = 0
+        if np.abs(x-solsx[0]) > np.abs(x-solsx[1]):
+            closex = solsx[1]
+        else:
+            closex = solsx[0]
+        #finding the zeros of the y values   
+        Ay = 1
+        By = -2*yc
+        Cy = yc**2+(closex-xc)**2-R**2
+        coeffy = [Ay,By,Cy]
+        solsy = np.roots(coeffy)
+        if np.abs(y-solsy[0]) > np.abs(y-solsy[1]):
+            closey = solsy[1]
+        else:
+            closey = solsy[0]
+
+        self.ax1.plot([x,closex],[y,closey],'g')
+        
+        offset = [x-closex,y-closey]
+        return offset
             
 if __name__=="__main__":
   app = wx.App()
