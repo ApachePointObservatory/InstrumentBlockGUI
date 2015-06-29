@@ -23,8 +23,7 @@ class GridData(object):
         to linear components.  This is how there is a differing X and Y platescale.
         """
         d = np.transpose(self.data)
-        #print d[0],d[1],d[2],d[3]
-        #print
+        print d[0],d[1],d[2],d[3]
         y_pos = np.unique(d[0])
         x_pos = np.unique(d[1])
         #sort the data
@@ -38,8 +37,8 @@ class GridData(object):
         for i,y in enumerate(y_pos):
             for n,m in enumerate(d[0]):
                 if y == m:
-                    #print i,n,y,m
-                    #print [d[0][n],d[1][n],d[2][n],d[3][n]]
+                    print i,n,y,m
+                    print [d[0][n],d[1][n],d[2][n],d[3][n]]
                     y_arr[i].append([d[0][n],d[1][n],d[2][n],d[3][n]])
 
         ymAng=[]
@@ -49,7 +48,7 @@ class GridData(object):
 
         for index,cat in enumerate(range(len(y_arr)-1)):
             fit = np.transpose(y_arr[index])
-            #print fit
+            print fit
             #fit the ccd x,y pos for the same x boresight
             m_rot = self.fitData(fit[2],fit[3])
             ymAng.append(self.rotAng(m_rot))
@@ -60,7 +59,7 @@ class GridData(object):
 
         for index,cat in enumerate(range(len(x_arr)-1)):
             fit = np.transpose(x_arr[index])
-            #print fit
+            print fit
             #fit the ccd x,y pos for the same x boresight
             m_rot = self.fitData(fit[3],fit[2])
             xmAng.append(self.rotAng(m_rot))
@@ -89,14 +88,11 @@ class GridData(object):
             slope, yint = self.fitData(item.T[0],item.T[1])
             slope_list.append(slope)
             yint_list.append(yint)
- 
-        print slope_list
-        print yint_list
         
-        #print xmAng, xmPlate
-        #print ymAng, ymPlate
+        print xmAng, xmPlate
+        print ymAng, ymPlate
 
-        return slope_list, yint_list
+        return slope_list,yint_list
 
     def plateScale(self, m = None, bin = None):
         """
