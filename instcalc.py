@@ -96,7 +96,7 @@ class GridData(object):
         #print xmAng, xmPlate
         #print ymAng, ymPlate
 
-        return
+        return slope_list, yint_list
 
     def plateScale(self, m = None, bin = None):
         """

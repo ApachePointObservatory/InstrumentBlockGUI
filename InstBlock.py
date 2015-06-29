@@ -330,17 +330,27 @@ class InstBlock(wx.Frame):
         else:
             object = [first,second,x_coo,y_coo]
             graphing = instcalc.GridData(object,2)
-            graphing.rotationAngle()
-            self.graphGridData(object)
+            slope_list,yint_list = graphing.rotationAngle()
+            self.graphGridData(object,slope_list,yint_list)
             return
 
-    def graphGridData(self,object):
+    def graphGridData(self,object,slope_list,yint_list):
         self.ax1 = self.fig.add_subplot(211)
         self.ax1.clear()
         self.ax1.set_title('Grid')
         self.ax1.set_ylabel('y')
         self.ax1.set_xlabel('x')
         self.ax1.plot(object[2],object[3],'o',clip_on=False,ms=2)
+
+        #plots the fit of each grid line
+        for i in range(len(slope_list)):
+            y = range(int(min(object[2])),int(max(object[2])))
+            x = []
+            for j in range(len(y)):
+                x.append((y[j]-yint_list[i])/slope_list[i])
+            self.ax1.plot(x,y)
+            self.ax1.annotate('rotAng = %.2f'%(slope_list[i]),(min(x),min(y)),fontsize=8)
+        self.ax1.set_aspect('equal',adjustable='box')
         self.canvas.draw()
         return
 
