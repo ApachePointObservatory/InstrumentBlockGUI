@@ -331,12 +331,22 @@ class InstBlock(wx.Frame):
         else:
             object = [first,second,x_coo,y_coo]
             graphing = instcalc.GridData(object,2)
-            graphing.rotationAngle()
-            #test the graphGrid
-            #graphing.graphGrid(self.canvas,self.fig)
+            print graphing.rotationAngle()
+            self.graphGridData(object)
+            return
+
+    def graphGridData(self,object):
+        self.ax1 = self.fig.add_subplot(211)
+        self.ax1.clear()
+        self.ax1.set_title('Grid')
+        self.ax1.set_ylabel('y')
+        self.ax1.set_xlabel('x')
+        self.ax1.plot(object[2],object[3],'o',clip_on=False,ms=2)
+        self.canvas.draw()
+        return
 
 #graphs the data points taken from the file, plots the centerpoint and circle estimate, calls to nearCircle to 
-    #calculate and display the offset
+#calculate and display the offset
     def graphRing(self,circleInfo,object):
         self.ax1 = self.fig.add_subplot(212)
         self.ax1.clear()
@@ -349,15 +359,15 @@ class InstBlock(wx.Frame):
         self.ax1.add_artist(circle)
         self.ax1.set_aspect('equal',adjustable='box')
         for i in range(len(object[0])):
-            offset = self.nearCircle(object[0][i],object[1][i],circleInfo[0],circleInfo[1],circleInfo[2],self.ax1)
+            offset = self.nearCircle(object[0][i],object[1][i],circleInfo[0],circleInfo[1],circleInfo[2])
             self.ax1.annotate('(%.2f,%.2f)'%(offset[0],offset[1]),(object[0][i]+5,object[1][i]+5),fontsize=8)
         self.canvas.draw()
         return
 
     #defines the line y = mx+b connecting the given data point (x,y) and the circle's centerpoint (xc,yc) then
     #defines circle using centerpoint and radius, finds intersections of the circle and the line
-    #and selects the nearest one, with A, B, and C being the points in the quadratic equation of 
-    def nearCircle(self,x,y,xc,yc,R,ax1):
+    #and selects the nearest one, with A, B, and C being the points in the quadratic equation 
+    def nearCircle(self,x,y,xc,yc,R):
         #finding the zeros of the x values
         m = (y-yc)/(x-xc)
         b = y-m*x

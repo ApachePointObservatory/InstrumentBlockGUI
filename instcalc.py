@@ -48,7 +48,7 @@ class GridData(object):
         xmPlate=[]
         for index,cat in enumerate(range(len(y_arr)-1)):
             fit = np.transpose(y_arr[index])
-            print fit
+            #print fit
             #fit the ccd x,y pos for the same x boresight
             m_rot = self.fitData(fit[2],fit[3])
             ymAng.append(self.rotAng(m_rot))
@@ -59,7 +59,7 @@ class GridData(object):
 
         for index,cat in enumerate(range(len(x_arr)-1)):
             fit = np.transpose(x_arr[index])
-            print fit
+            #print fit
             #fit the ccd x,y pos for the same x boresight
             m_rot = self.fitData(fit[3],fit[2])
             xmAng.append(self.rotAng(m_rot))
@@ -68,10 +68,10 @@ class GridData(object):
             m_scale= self.fitData(fit[0],fit[2])
             xmPlate.append(self.plateScale(m_scale, self.bin))
 
-        print xmAng, xmPlate
-        print ymAng, ymPlate
+        #print xmAng, xmPlate
+        #print ymAng, ymPlate
 
-        return 
+        return ymAng
 
     def plateScale(self, m = None, bin = None):
         """
@@ -82,10 +82,10 @@ class GridData(object):
         Use the previous fitting but return block data as well as human readable data
         """
         scale = m * bin
-        print 'plate scale: ' +str(m) + ' pix/deg (binned)'
-        print 'plate scale: ' +str(scale) + ' pix/deg (unbinned)'
-        print 'scale: ' +str(1/(m/3600.)) + ' arcsec/pix (binned)'
-        print 'scale: ' +str(1/(scale/3600.)) + ' arcsec/pix (unbinned)'
+        #print 'plate scale: ' +str(m) + ' pix/deg (binned)'
+        #print 'plate scale: ' +str(scale) + ' pix/deg (unbinned)'
+        #print 'scale: ' +str(1/(m/3600.)) + ' arcsec/pix (binned)'
+        #print 'scale: ' +str(1/(scale/3600.)) + ' arcsec/pix (unbinned)'
         return scale
 
     def rotAng(self, m = None):
@@ -93,7 +93,7 @@ class GridData(object):
         y = (m*x)
         phi = self.convert(y,x)
         theta = ((phi*180.)/np.pi)
-        print 'rotation: ' +str(theta)
+        #print 'rotation: ' +str(theta)
         return theta
 
     def fitData(self, x_arr = None, y_arr = None):
@@ -101,11 +101,11 @@ class GridData(object):
         use numpy lsq fit on the grid of data and return fit equation
         @param grid - A Numpy array of ...
         """
-        print x_arr, y_arr
+        #print x_arr, y_arr
         A = np.vstack([x_arr, np.ones(len(x_arr))]).T
         #print A
         m,c = np.linalg.lstsq(A,y_arr)[0]
-        print m,c
+        #print m,c
         return m
 
     def convert(self, x = None, y = None):
