@@ -46,6 +46,7 @@ class GridData(object):
         ymPlate=[]
         xmAng=[]
         xmPlate=[]
+
         for index,cat in enumerate(range(len(y_arr)-1)):
             fit = np.transpose(y_arr[index])
             #print fit
@@ -68,10 +69,34 @@ class GridData(object):
             m_scale= self.fitData(fit[0],fit[2])
             xmPlate.append(self.plateScale(m_scale, self.bin))
 
+        comb_coords = []
+
+        for i in range(len(self.data[2])):
+            comb_coords.append([self.data[2][i],self.data[3][i]])
+
+        arranged = sorted(comb_coords,key=itemgetter(0))
+
+        line1 = arranged[0:3]
+        line2 = arranged[3:6]
+        line3 = arranged[6:9]
+        line_list = np.array([line1,line2,line3])
+        slope_list = []
+        yint_list = []
+
+        for item in line_list:
+            print item
+            print item.T
+            slope, yint = self.fitData(item.T[0],item.T[1])
+            slope_list.append(slope)
+            yint_list.append(yint)
+ 
+        print slope_list
+        print yint_list
+        
         #print xmAng, xmPlate
         #print ymAng, ymPlate
 
-        return ymAng
+        return
 
     def plateScale(self, m = None, bin = None):
         """
@@ -105,8 +130,7 @@ class GridData(object):
         A = np.vstack([x_arr, np.ones(len(x_arr))]).T
         #print A
         m,c = np.linalg.lstsq(A,y_arr)[0]
-        #print m,c
-        return m
+        return m,c
 
     def convert(self, x = None, y = None):
         phi = np.arctan2(x, y)

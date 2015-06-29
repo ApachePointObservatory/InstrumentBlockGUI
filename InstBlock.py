@@ -311,7 +311,6 @@ class InstBlock(wx.Frame):
             line_seg = line.split()
 
             if dataRing == False:
-                print 'dataring is false'
                 first.append(float(line_seg[0]))
                 second.append(float(line_seg[1]))
                 x_coo.append(float(line_seg[2]))
@@ -331,7 +330,7 @@ class InstBlock(wx.Frame):
         else:
             object = [first,second,x_coo,y_coo]
             graphing = instcalc.GridData(object,2)
-            print graphing.rotationAngle()
+            graphing.rotationAngle()
             self.graphGridData(object)
             return
 
