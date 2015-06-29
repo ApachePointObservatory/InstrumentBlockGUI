@@ -344,7 +344,7 @@ class InstBlock(wx.Frame):
 
         #plots the fit of each grid line
         for i in range(len(slope_list)):
-            y = range(int(min(object[2])),int(max(object[2])))
+            y = range(int(min(object[3])),int(max(object[3])))
             x = []
             for j in range(len(y)):
                 x.append((y[j]-yint_list[i])/slope_list[i])
