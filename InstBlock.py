@@ -290,7 +290,8 @@ class InstBlock(wx.Frame):
     #takes event from user entered file, takes coordinates from given file
     def fileRead(self,event):
         dataRing = True
-        if event.GetId() == -2018:
+        print event.GetId()
+        if event.GetId() == -2019:
             dataRing = False
 
         if dataRing == True:
@@ -300,7 +301,10 @@ class InstBlock(wx.Frame):
 
         file = open(filename,'r')
         line = file.readline().lstrip()
-
+        #first two columns of the grid file
+        first = []
+        second = []
+        #end of first two columns
         x_coo = []
         y_coo = []
         
@@ -308,6 +312,8 @@ class InstBlock(wx.Frame):
             line_seg = line.split()
 
             if dataRing == False:
+                first.append(float(line_seg[0]))
+                second.append(float(line_seg[1]))
                 x_coo.append(float(line_seg[2]))
                 y_coo.append(float(line_seg[3]))
             else:
@@ -316,10 +322,11 @@ class InstBlock(wx.Frame):
             line = file.readline().lstrip()
 
         file.close()
-        object = [x_coo,y_coo]
+        object = [first,second,x_coo,y_coo]
         if dataRing == True:
-            graphing = instcalc.BoresightData(object)
-            graphing.boresightPos(self.canvas,self.fig)
+            #graphing = instcalc.BoresightData(object)
+            #graphing.boresightPos(self.canvas,self.fig)
+            print 'ring'
         else:
             graphing = instcalc.GridData(object)
             graphing.rotationAngle(self.canvas,self.fig)
